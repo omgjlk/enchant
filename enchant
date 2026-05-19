@@ -1,0 +1,135 @@
+#!/usr/bin/env bash
+# enchant — turn a bare macOS laptop into your equipped dev machine.
+#
+# Idempotent. Re-run any time. New customisation lives in:
+#   - Brewfile                 (packages, casks, taps, VS Code ext, go installs)
+#   - macos/defaults.sh        (macOS system preferences)
+#   - lib/*.sh                 (additional spells)
+#   - omgjlk/dotfiles (chezmoi source for $HOME files)
+#
+# Usage:
+#   ./enchant            # cast the full ritual
+#   ./enchant brew       # just sync Homebrew
+#   ./enchant defaults   # just apply macOS defaults
+#   ./enchant dotfiles   # just sync dotfiles via chezmoi
+#   ./enchant doctor     # show what's drifted from Brewfile
+
+set -euo pipefail
+
+REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$REPO_DIR"
+
+# shellcheck source=lib/log.sh
+source "$REPO_DIR/lib/log.sh"
+
+# --- Spells ----------------------------------------------------------------
+
+spell_preflight() {
+  if [[ "$(uname -s)" != "Darwin" ]]; then
+    fail "enchant currently targets macOS only (uname: $(uname -s))"
+  fi
+  log "macOS $(sw_vers -productVersion) on $(uname -m)"
+}
+
+spell_xcode_clt() {
+  if xcode-select -p >/dev/null 2>&1; then
+    ok "Xcode Command Line Tools present"
+    return
+  fi
+  log "Installing Xcode Command Line Tools (a GUI prompt will appear)..."
+  xcode-select --install || true
+  until xcode-select -p >/dev/null 2>&1; do
+    sleep 5
+  done
+  ok "Xcode Command Line Tools installed"
+}
+
+spell_homebrew() {
+  if command -v brew >/dev/null 2>&1; then
+    ok "Homebrew present ($(brew --version | head -1))"
+  else
+    log "Installing Homebrew..."
+    NONINTERACTIVE=1 /bin/bash -c \
+      "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+  fi
+  # Ensure brew is on PATH for the rest of this run (Apple Silicon default).
+  if [[ -x /opt/homebrew/bin/brew ]]; then
+    eval "$(/opt/homebrew/bin/brew shellenv)"
+  elif [[ -x /usr/local/bin/brew ]]; then
+    eval "$(/usr/local/bin/brew shellenv)"
+  fi
+}
+
+spell_brew_bundle() {
+  log "Casting Brewfile..."
+  HOMEBREW_NO_AUTO_UPDATE=1 brew bundle --file="$REPO_DIR/Brewfile"
+  ok "Brewfile applied"
+}
+
+spell_dotfiles() {
+  local repo="${DOTFILES_REPO:-git@github.com:omgjlk/dotfiles.git}"
+  if ! command -v chezmoi >/dev/null 2>&1; then
+    log "Installing chezmoi via Homebrew..."
+    brew install chezmoi
+  fi
+  if [[ ! -d "${HOME}/.local/share/chezmoi/.git" ]]; then
+    log "Initializing chezmoi from ${repo}..."
+    chezmoi init "${repo}"
+  else
+    log "Updating chezmoi source..."
+    chezmoi update --no-tty || chezmoi git -- pull --rebase
+  fi
+  log "Applying dotfiles..."
+  chezmoi apply --keep-going
+  ok "Dotfiles applied"
+}
+
+spell_macos_defaults() {
+  if [[ -x "$REPO_DIR/macos/defaults.sh" ]]; then
+    log "Applying macOS defaults..."
+    "$REPO_DIR/macos/defaults.sh"
+    ok "macOS defaults applied"
+  else
+    warn "macos/defaults.sh missing or not executable; skipping"
+  fi
+}
+
+spell_doctor() {
+  log "Checking Brewfile drift..."
+  brew bundle check --file="$REPO_DIR/Brewfile" --verbose || true
+  log "Installed leaves not in Brewfile (candidates to add):"
+  comm -23 \
+    <(brew leaves | sort) \
+    <(awk -F\" '/^brew /{print $2}' Brewfile | awk -F/ '{print $NF}' | sort) || true
+  log "Installed casks not in Brewfile:"
+  comm -23 \
+    <(brew list --cask | sort) \
+    <(awk -F\" '/^cask /{print $2}' Brewfile | sort) || true
+}
+
+# --- Dispatcher ------------------------------------------------------------
+
+cast_all() {
+  spell_preflight
+  spell_xcode_clt
+  spell_homebrew
+  spell_brew_bundle
+  spell_macos_defaults
+  spell_dotfiles
+  ok "✨ Enchantment complete."
+}
+
+cmd="${1:-all}"
+case "$cmd" in
+  all)       cast_all ;;
+  brew)      spell_preflight; spell_homebrew; spell_brew_bundle ;;
+  defaults)  spell_preflight; spell_macos_defaults ;;
+  dotfiles)  spell_preflight; spell_dotfiles ;;
+  doctor)    spell_preflight; spell_doctor ;;
+  -h|--help|help)
+    sed -n '2,15p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
+    ;;
+  *)
+    fail "Unknown command: $cmd (try: all | brew | defaults | dotfiles | doctor)"
+    ;;
+esac
