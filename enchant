@@ -12,6 +12,7 @@
 #   ./enchant brew       # just sync Homebrew
 #   ./enchant defaults   # just apply macOS defaults
 #   ./enchant dotfiles   # just sync dotfiles via chezmoi
+#   ./enchant shell      # switch login shell to Homebrew bash
 #   ./enchant doctor     # show what's drifted from Brewfile
 
 set -euo pipefail
@@ -84,6 +85,33 @@ spell_dotfiles() {
   ok "Dotfiles applied"
 }
 
+spell_shell() {
+  local brew_bash="${HOMEBREW_PREFIX:-/opt/homebrew}/bin/bash"
+  if [[ ! -x "$brew_bash" ]]; then
+    warn "Homebrew bash not found at $brew_bash. Run './enchant brew' first."
+    return 1
+  fi
+  if ! grep -qxF "$brew_bash" /etc/shells; then
+    log "Adding $brew_bash to /etc/shells (sudo)..."
+    echo "$brew_bash" | sudo tee -a /etc/shells >/dev/null
+  else
+    ok "$brew_bash already in /etc/shells"
+  fi
+  local current_shell
+  current_shell="$(dscl . -read "/Users/${USER}" UserShell 2>/dev/null | awk '{print $2}')"
+  if [[ "$current_shell" != "$brew_bash" ]]; then
+    log "Changing login shell to $brew_bash..."
+    chsh -s "$brew_bash"
+  else
+    ok "Login shell already $brew_bash"
+  fi
+}
+
+spell_install_shell_dotfiles() {
+  # Removed: bash dotfiles now live in the chezmoi dotfiles repo.
+  fail "Deprecated. Bash dotfiles are managed by chezmoi; run './enchant dotfiles'."
+}
+
 spell_macos_defaults() {
   if [[ -x "$REPO_DIR/macos/defaults.sh" ]]; then
     log "Applying macOS defaults..."
@@ -125,11 +153,12 @@ case "$cmd" in
   brew)      spell_preflight; spell_homebrew; spell_brew_bundle ;;
   defaults)  spell_preflight; spell_macos_defaults ;;
   dotfiles)  spell_preflight; spell_dotfiles ;;
+  shell)     spell_preflight; spell_homebrew; spell_shell ;;
   doctor)    spell_preflight; spell_doctor ;;
   -h|--help|help)
     sed -n '2,15p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
     ;;
   *)
-    fail "Unknown command: $cmd (try: all | brew | defaults | dotfiles | doctor)"
+    fail "Unknown command: $cmd (try: all | brew | defaults | dotfiles | shell | doctor)"
     ;;
 esac

@@ -7,6 +7,10 @@ tap "github/bootstrap"
 
 # --- Formulae ---------------------------------------------------------------
 brew "azure-cli"
+brew "bash"
+brew "bash-completion@2"
+brew "atuin"
+brew "fzf"
 brew "gh"
 brew "git"
 brew "git-delta"
