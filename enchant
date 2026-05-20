@@ -45,6 +45,21 @@ spell_xcode_clt() {
   ok "Xcode Command Line Tools installed"
 }
 
+spell_prime_sudo() {
+  # Some downstream spells (Homebrew install in NONINTERACTIVE mode,
+  # /etc/shells edit) need sudo. Prompt for it up front so we never get a
+  # silent failure mid-run.
+  if sudo -n true 2>/dev/null; then
+    ok "sudo credentials already cached"
+    return
+  fi
+  log "Priming sudo (you'll be prompted for your password)..."
+  sudo -v
+  # Keep the sudo cred alive while enchant runs, so later spells don't re-prompt.
+  ( while kill -0 "$$" 2>/dev/null; do sudo -n true; sleep 60; done ) &
+  ok "sudo primed"
+}
+
 spell_homebrew() {
   if command -v brew >/dev/null 2>&1; then
     ok "Homebrew present ($(brew --version | head -1))"
@@ -140,6 +155,7 @@ spell_doctor() {
 cast_all() {
   spell_preflight
   spell_xcode_clt
+  spell_prime_sudo
   spell_homebrew
   spell_brew_bundle
   spell_macos_defaults
