@@ -17,17 +17,21 @@ Everything is idempotent: re-run any time, on any laptop.
 
 ## Quick start (new laptop)
 
+See **[BOOTSTRAP.md](./BOOTSTRAP.md)** for the full step-by-step,
+including SSH key migration from your old laptop.
+
+The condensed version:
+
 ```sh
-# 1. Install git via Xcode CLT prompt (one click — enchant handles this).
-# 2. Clone:
+# 1. Move SSH keys from old laptop (see BOOTSTRAP.md step 2)
+# 2. Clone enchant (public, no auth):
 git clone https://github.com/omgjlk/enchant.git ~/src/enchant
 cd ~/src/enchant
 # 3. Cast:
 ./enchant
+# 4. Switch shell:
+./enchant shell
 ```
-
-That's it. You will be prompted by macOS for Xcode CLT and possibly for
-dotfiles repo access (which uses your SSH key).
 
 ## Subcommands
 
