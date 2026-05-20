@@ -13,6 +13,7 @@
 #   ./enchant defaults   # just apply macOS defaults
 #   ./enchant dotfiles   # just sync dotfiles via chezmoi
 #   ./enchant shell      # switch login shell to Homebrew bash
+#   ./enchant iterm2     # point iTerm2 at chezmoi-managed prefs folder
 #   ./enchant doctor     # show what's drifted from Brewfile
 
 set -euo pipefail
@@ -141,6 +142,39 @@ spell_install_shell_dotfiles() {
   fail "Deprecated. Bash dotfiles are managed by chezmoi; run './enchant dotfiles'."
 }
 
+spell_iterm2() {
+  # Switch iTerm2 to "Load preferences from a custom folder" pointing at
+  # ~/.config/iterm2, where chezmoi installs the plist. Idempotent.
+  local prefs_dir="${HOME}/.config/iterm2"
+  local plist="${prefs_dir}/com.googlecode.iterm2.plist"
+
+  if [[ ! -f "$plist" ]]; then
+    fail "Missing $plist. Run './enchant dotfiles' first to install it."
+  fi
+
+  if pgrep -x iTerm2 >/dev/null 2>&1; then
+    log "Quitting iTerm2 so it doesn't clobber the custom folder on exit..."
+    osascript -e 'tell application "iTerm2" to quit' >/dev/null 2>&1 || true
+    # Wait up to 10s for it to actually exit.
+    for _ in 1 2 3 4 5 6 7 8 9 10; do
+      pgrep -x iTerm2 >/dev/null 2>&1 || break
+      sleep 1
+    done
+    if pgrep -x iTerm2 >/dev/null 2>&1; then
+      warn "iTerm2 is still running. Quit it manually (Cmd-Q) and re-run."
+      return 1
+    fi
+  fi
+
+  log "Pointing iTerm2 at $prefs_dir..."
+  defaults write com.googlecode.iterm2 LoadPrefsFromCustomFolder -bool true
+  defaults write com.googlecode.iterm2 PrefsCustomFolder -string "$prefs_dir"
+
+  ok "iTerm2 will load prefs from $prefs_dir on next launch."
+  log "Open iTerm2 → Settings → General → Preferences and set"
+  log "'Save Changes' to 'Save' so future tweaks write back to the folder."
+}
+
 spell_macos_defaults() {
   if [[ -x "$REPO_DIR/macos/defaults.sh" ]]; then
     log "Applying macOS defaults..."
@@ -184,11 +218,12 @@ case "$cmd" in
   defaults)  spell_preflight; spell_macos_defaults ;;
   dotfiles)  spell_preflight; spell_dotfiles ;;
   shell)     spell_preflight; spell_shell ;;
+  iterm2)    spell_preflight; spell_iterm2 ;;
   doctor)    spell_preflight; spell_doctor ;;
   -h|--help|help)
-    sed -n '2,15p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
+    sed -n '2,17p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
     ;;
   *)
-    fail "Unknown command: $cmd (try: all | brew | defaults | dotfiles | shell | doctor)"
+    fail "Unknown command: $cmd (try: all | brew | defaults | dotfiles | shell | iterm2 | doctor)"
     ;;
 esac
