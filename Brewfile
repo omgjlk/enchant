@@ -30,6 +30,8 @@ brew "wget"
 brew "azure/functions/azure-functions-core-tools@4"
 
 # --- Casks ------------------------------------------------------------------
+cask "1password"
+cask "1password-cli"
 cask "alt-tab"
 cask "betterdisplay"
 cask "copilot-cli"
@@ -41,9 +43,12 @@ cask "elgato-stream-deck"
 cask "elgato-wave-link"
 cask "fantastical"
 cask "iterm2"
+cask "microsoft-teams"
 cask "signal"
 cask "spotify"
+cask "tailscale"
 cask "visual-studio-code"
+cask "zoom"
 
 # --- VS Code extensions -----------------------------------------------------
 vscode "bierner.markdown-mermaid"
