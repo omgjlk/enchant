@@ -48,16 +48,18 @@ spell_xcode_clt() {
 spell_prime_sudo() {
   # Some downstream spells (Homebrew install in NONINTERACTIVE mode,
   # /etc/shells edit) need sudo. Prompt for it up front so we never get a
-  # silent failure mid-run.
+  # silent failure mid-run, and keep the credential warm in the background.
   if sudo -n true 2>/dev/null; then
     ok "sudo credentials already cached"
-    return
+  else
+    log "Priming sudo (you'll be prompted for your password)..."
+    sudo -v
+    ok "sudo primed"
   fi
-  log "Priming sudo (you'll be prompted for your password)..."
-  sudo -v
-  # Keep the sudo cred alive while enchant runs, so later spells don't re-prompt.
-  ( while kill -0 "$$" 2>/dev/null; do sudo -n true; sleep 60; done ) &
-  ok "sudo primed"
+  # Always start the keep-alive loop: cached creds expire (5min default on
+  # macOS, sometimes shorter), so we refresh every 50s while enchant runs.
+  ( while kill -0 "$$" 2>/dev/null; do sudo -n true 2>/dev/null; sleep 50; done ) &
+  log "sudo keep-alive started (pid $!)"
 }
 
 spell_homebrew() {
