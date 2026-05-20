@@ -63,14 +63,20 @@ spell_prime_sudo() {
 }
 
 spell_homebrew() {
+  # Look in known install locations first; PATH may not be set up yet if
+  # this is a fresh shell after install.
+  if [[ -x /opt/homebrew/bin/brew ]]; then
+    eval "$(/opt/homebrew/bin/brew shellenv)"
+  elif [[ -x /usr/local/bin/brew ]]; then
+    eval "$(/usr/local/bin/brew shellenv)"
+  fi
   if command -v brew >/dev/null 2>&1; then
     ok "Homebrew present ($(brew --version | head -1))"
-  else
-    log "Installing Homebrew..."
-    NONINTERACTIVE=1 /bin/bash -c \
-      "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+    return
   fi
-  # Ensure brew is on PATH for the rest of this run (Apple Silicon default).
+  log "Installing Homebrew..."
+  NONINTERACTIVE=1 /bin/bash -c \
+    "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
   if [[ -x /opt/homebrew/bin/brew ]]; then
     eval "$(/opt/homebrew/bin/brew shellenv)"
   elif [[ -x /usr/local/bin/brew ]]; then
@@ -103,9 +109,15 @@ spell_dotfiles() {
 }
 
 spell_shell() {
-  local brew_bash="${HOMEBREW_PREFIX:-/opt/homebrew}/bin/bash"
-  if [[ ! -x "$brew_bash" ]]; then
-    warn "Homebrew bash not found at $brew_bash. Run './enchant brew' first."
+  local brew_bash
+  for candidate in /opt/homebrew/bin/bash /usr/local/bin/bash; do
+    if [[ -x "$candidate" ]]; then
+      brew_bash="$candidate"
+      break
+    fi
+  done
+  if [[ -z "${brew_bash:-}" ]]; then
+    warn "Homebrew bash not found. Run './enchant brew' first."
     return 1
   fi
   if ! grep -qxF "$brew_bash" /etc/shells; then
@@ -171,7 +183,7 @@ case "$cmd" in
   brew)      spell_preflight; spell_homebrew; spell_brew_bundle ;;
   defaults)  spell_preflight; spell_macos_defaults ;;
   dotfiles)  spell_preflight; spell_dotfiles ;;
-  shell)     spell_preflight; spell_homebrew; spell_shell ;;
+  shell)     spell_preflight; spell_shell ;;
   doctor)    spell_preflight; spell_doctor ;;
   -h|--help|help)
     sed -n '2,15p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
