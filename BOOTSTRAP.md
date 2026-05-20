@@ -24,6 +24,7 @@ tar -czf ssh-keys.tar.gz \
   --exclude='.ssh/sockets' \
   --exclude='.ssh/controlmasters' \
   --exclude='.ssh/known_hosts.old' \
+  --exclude='.ssh/agent' \
   .ssh
 ```
 Then **AirDrop** `~/ssh-keys.tar.gz` to the new laptop. (AirDrop is device-
