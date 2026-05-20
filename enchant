@@ -169,10 +169,12 @@ spell_iterm2() {
   log "Pointing iTerm2 at $prefs_dir..."
   defaults write com.googlecode.iterm2 LoadPrefsFromCustomFolder -bool true
   defaults write com.googlecode.iterm2 PrefsCustomFolder -string "$prefs_dir"
+  # Save Changes = Automatically (writes back to the custom folder on every change).
+  # Values: 0 = Manually, 1 = When Quitting, 2 = Automatically.
+  defaults write com.googlecode.iterm2 NoSyncNeverRemindPrefsChangesLostForFile_selection -int 2
 
   ok "iTerm2 will load prefs from $prefs_dir on next launch."
-  log "Open iTerm2 → Settings → General → Preferences and set"
-  log "'Save Changes' to 'Save' so future tweaks write back to the folder."
+  ok "Save Changes set to Automatically."
 }
 
 spell_macos_defaults() {
