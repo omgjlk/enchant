@@ -56,16 +56,27 @@ ssh-add --apple-use-keychain ~/.ssh/id_rsa     # for each passphrased key
 
 ## 3. Clone enchant
 
-`enchant` is public — no auth needed.
+`enchant` is public — no auth needed. But you need `git` first; macOS
+doesn't ship it. Trigger the **Xcode Command Line Tools** installer:
+
+```sh
+xcode-select --install
+```
+
+A GUI dialog pops up. Click **Install**, accept the license, wait ~5–15
+minutes. Verify when done:
+
+```sh
+git --version
+```
+
+Then clone:
 
 ```sh
 mkdir -p ~/src
 git clone https://github.com/omgjlk/enchant.git ~/src/enchant
 cd ~/src/enchant
 ```
-
-> If `git` isn't installed, this triggers the **Xcode Command Line Tools**
-> install prompt — click through, wait, then re-run.
 
 ## 4. Cast the ritual
 
