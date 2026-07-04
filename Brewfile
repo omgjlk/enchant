@@ -21,6 +21,7 @@ brew "go"
 brew "httpie"
 brew "ipcalc"
 brew "jq"
+brew "mas"
 brew "node"
 brew "ssh-copy-id"
 brew "tfenv"
@@ -50,6 +51,11 @@ cask "spotify"
 cask "tailscale"
 cask "visual-studio-code"
 cask "zoom"
+
+# --- Mac App Store ----------------------------------------------------------
+# Requires being signed in to the App Store. Moom Classic is the App Store
+# edition (the standalone `moom` cask is the newer, license-gated version).
+mas "Moom", id: 419330170
 
 # --- VS Code extensions -----------------------------------------------------
 vscode "bierner.markdown-mermaid"
