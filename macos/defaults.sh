@@ -16,7 +16,7 @@ osascript -e 'tell application "System Settings" to quit' >/dev/null 2>&1 || tru
 
 # --- Keyboard ---------------------------------------------------------------
 defaults write NSGlobalDomain KeyRepeat -int 2
-defaults write NSGlobalDomain InitialKeyRepeat -int 15
+defaults write NSGlobalDomain InitialKeyRepeat -int 25
 defaults write NSGlobalDomain ApplePressAndHoldEnabled -bool false
 
 # Remap Caps Lock -> Escape for ALL keyboards (the special "-1-0" key applies
@@ -45,6 +45,14 @@ defaults write com.apple.desktopservices DSDontWriteUSBStores -bool true
 defaults write com.apple.dock autohide -bool true
 defaults write com.apple.dock show-recents -bool false
 defaults write com.apple.dock mru-spaces -bool false
+
+# --- Hot corners ------------------------------------------------------------
+# Bottom-right corner -> Put Display to Sleep. Corner action codes:
+#   0 = no-op, 4 = Desktop, 5 = Start Screen Saver, 6 = Disable Screen Saver,
+#   10 = Put Display to Sleep, 11 = Launchpad, 12 = Notification Center.
+# The paired -modifier is a bitmask of held modifier keys (0 = none).
+defaults write com.apple.dock wvous-br-corner -int 10
+defaults write com.apple.dock wvous-br-modifier -int 0
 
 # --- Screenshots ------------------------------------------------------------
 mkdir -p "${HOME}/Pictures/Screenshots"
