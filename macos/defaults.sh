@@ -16,7 +16,7 @@ osascript -e 'tell application "System Settings" to quit' >/dev/null 2>&1 || tru
 
 # --- Keyboard ---------------------------------------------------------------
 defaults write NSGlobalDomain KeyRepeat -int 2
-defaults write NSGlobalDomain InitialKeyRepeat -int 25
+defaults write NSGlobalDomain InitialKeyRepeat -int 30
 defaults write NSGlobalDomain ApplePressAndHoldEnabled -bool false
 
 # Remap Caps Lock -> Escape for ALL keyboards (the special "-1-0" key applies
