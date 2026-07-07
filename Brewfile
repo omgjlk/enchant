@@ -49,7 +49,7 @@ cask "obsidian"
 cask "signal"
 cask "slack"
 cask "spotify"
-cask "tailscale"
+cask "tailscale-app"
 cask "visual-studio-code"
 cask "zoom"
 
